@@ -1,0 +1,208 @@
+// ใช้แพ็กเกจที่จำเป็น
+import java.util.*;
+
+// คลาสหนังสือแบบ abstract สำหรับรองรับหนังสือทุกประเภท
+abstract class Book {
+    private String isbn; // รหัสหนังสือ
+    private String title; // ชื่อหนังสือ
+    private String author; // ผู้แต่ง
+    private double price; // ราคาขาย
+
+    public Book(String isbn, String title, String author, double price) {
+        this.isbn = isbn;
+        this.title = title;
+        this.author = author;
+        this.price = price;
+    }
+
+    // เมธอด abstract สำหรับคำนวณราคาหลังหักส่วนลดหรือค่าธรรมเนียม
+    public abstract double calculatePrice(boolean isVIP);
+
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public double getBasePrice() {
+        return price;
+    }
+
+    protected double getPrice() {
+        return price;
+    }
+
+    // แสดงรายละเอียดของหนังสือ
+    public String toString() {
+        return getType() + ": " + title + " by " + author + " (" + isbn + ") - " + price + " THB";
+    }
+}
+
+
+// หนังสือประเภท PhysicalBook ไม่มีส่วนลดเฉพาะ แต่ VIP ได้ลด 15%
+class PhysicalBook extends Book {
+    public PhysicalBook(String isbn, String title, String author, double price) {
+        super(isbn, title, author, price);
+    }
+
+    public double calculatePrice(boolean isVIP) {
+        double finalPrice = getPrice(); // ราคาพื้นฐาน
+        if (isVIP) finalPrice *= 0.85; // ลด 15% หากเป็น VIP
+        return finalPrice;
+    }
+}
+
+
+// หนังสือประเภท EBook ลด 10% โดยอัตโนมัติ และ VIP ลดเพิ่ม 15%
+class EBook extends Book {
+    public EBook(String isbn, String title, String author, double price) {
+        super(isbn, title, author, price);
+    }
+
+    public double calculatePrice(boolean isVIP) {
+        double finalPrice = getPrice() * 0.9; // ลด 10% สำหรับ EBook
+        if (isVIP) finalPrice *= 0.85; // ลดเพิ่ม 15% หากเป็น VIP
+        return finalPrice;
+    }
+}
+
+
+// หนังสือประเภท Audiobook บวกค่าธรรมเนียม 5% และ VIP ลด 15%
+class Audiobook extends Book {
+    public Audiobook(String isbn, String title, String author, double price) {
+        super(isbn, title, author, price);
+    }
+
+    public double calculatePrice(boolean isVIP) {
+        double finalPrice = getPrice() * 1.05; // บวกค่าธรรมเนียม 5%
+        if (isVIP) finalPrice *= 0.85; // ลด 15% หากเป็น VIP
+        return finalPrice;
+    }
+}
+
+
+// คลาสลูกค้า จัดการตะกร้าหนังสือ และคำนวณยอดรวม
+class Customer {
+    private String name;
+    private boolean isVIP;
+    private List<Book> cart = new ArrayList<>(); // รายการหนังสือที่ซื้อ
+
+    public Customer(String name, boolean isVIP) {
+        this.name = name;
+        this.isVIP = isVIP;
+    }
+
+    public void addToCart(Book book) {
+        cart.add(book); // เพิ่มหนังสือลงตะกร้า
+    }
+
+    public double calculateTotal() {
+        double total = 0;
+        for (Book b : cart) {
+            total += b.calculatePrice(isVIP); // รวมราคาหลังหักส่วนลดหรือค่าธรรมเนียม
+        }
+        return total;
+    }
+
+    public void showCart() {
+        for (Book b : cart) {
+            System.out.println(b); // แสดงรายการหนังสือในตะกร้า
+        }
+        System.out.println("Total (" + (isVIP ? "VIP" : "Normal") + "): " + calculateTotal() + " THB\n");
+    }
+
+    public List<Book> getCart() {
+        return cart;
+    }
+}
+
+
+// คลาส Store เป็นตัวแทนร้านหนังสือ
+class Store {
+    private List<Book> inventory = new ArrayList<>(); // รายการหนังสือทั้งหมดในร้าน
+    private Map<String, Integer> salesCount = new HashMap<>(); // นับจำนวนขายแต่ละเล่ม
+
+    public void addBook(Book book) {
+        inventory.add(book); // เพิ่มหนังสือเข้าร้าน
+    }
+
+    // แสดงหนังสือแนะนำ (ราคาแพงสุดในแต่ละประเภท)
+    public void showRecommendations() {
+        Map<String, Book> topBooks = new HashMap<>();
+        for (Book b : inventory) {
+            String type = b.getType();
+            if (!topBooks.containsKey(type) || b.getBasePrice() > topBooks.get(type).getBasePrice()) {
+                topBooks.put(type, b); // เก็บเล่มที่แพงสุดในแต่ละประเภท
+            }
+        }
+        System.out.println("\nRecommended Books:");
+        for (Book b : topBooks.values()) {
+            System.out.println(b);
+        }
+    }
+
+    // แสดงหนังสือขายดี 5 อันดับแรก
+    public void showBestSellers() {
+        System.out.println("\nBest Sellers:");
+        salesCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(5)
+                .forEach(e -> System.out.println(e.getKey() + " - " + e.getValue() + " sold"));
+    }
+
+    // อัปเดตจำนวนขายเมื่อลูกค้าซื้อหนังสือ
+    public void updateSales(List<Book> books) {
+        for (Book b : books) {
+            String title = b.getTitle();
+            salesCount.put(title, salesCount.getOrDefault(title, 0) + 1);
+        }
+    }
+
+    public List<Book> getInventory() {
+        return inventory;
+    }
+}
+
+
+// เมนคลาสสำหรับรันโปรแกรมหลัก
+public class OnlineBookstoreApp {
+    public static void main(String[] args) {
+        Store store = new Store();
+
+        // เพิ่ม PhysicalBook 3 เล่ม
+        store.addBook(new PhysicalBook("001", "Java Basics", "Alice", 300));
+        store.addBook(new PhysicalBook("004", "Advanced Java", "Dave", 400));
+        store.addBook(new PhysicalBook("006", "C++ Mastery", "Frank", 350));
+
+        // เพิ่ม EBook 3 เล่ม
+        store.addBook(new EBook("002", "Learn Python", "Bob", 250));
+        store.addBook(new EBook("005", "Data Science", "Eve", 500));
+        store.addBook(new EBook("007", "Machine Learning", "Grace", 450));
+
+        // เพิ่ม Audiobook 3 เล่ม
+        store.addBook(new Audiobook("003", "Story Time", "Carol", 200));
+        store.addBook(new Audiobook("008", "English Listening", "Hank", 300));
+        store.addBook(new Audiobook("009", "Motivation Boost", "Ivy", 280));
+
+        // ลูกค้า Tom (ไม่ใช่ VIP)
+        Customer cus1 = new Customer("Tom", false);
+        cus1.addToCart(store.getInventory().get(0)); // Java Basics
+        cus1.addToCart(store.getInventory().get(1)); // Advanced Java
+
+        // ลูกค้า Jerry (VIP)
+        Customer cus2 = new Customer("Jerry", true);
+        cus2.addToCart(store.getInventory().get(3)); // Learn Python
+        cus2.addToCart(store.getInventory().get(4)); // Data Science
+
+        cus1.showCart(); // แสดงตะกร้าและราคารวมของ Tom
+        store.updateSales(cus1.getCart()); // อัปเดตยอดขาย
+
+        cus2.showCart(); // แสดงตะกร้าและราคารวมของ Jerry
+        store.updateSales(cus2.getCart()); // อัปเดตยอดขาย
+
+        store.showRecommendations(); // แสดงหนังสือแนะนำ
+        store.showBestSellers(); // แสดงหนังสือขายดี
+    }
+}
