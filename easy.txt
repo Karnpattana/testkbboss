@@ -1,0 +1,160 @@
+package gptGen;
+
+public abstract class Book {
+	private String isbn;
+	private String title;
+	private String author;
+	private double price;
+	
+	private double VIP_DISCOUNT = 0.85;
+	private double PHYSICAL_DISCOUNT = 1;
+	private double EBOOK_DISCOUNT = 0.9;
+	private double AUDIO_DISCOUNT = 1.05;
+	
+	public Book (String isbn, String title, String author, double price) {
+		this.isbn=isbn;
+		this.title=title;
+		this.author=author;
+		this.price=price;
+	}
+	
+	public String getIsbn() {
+		return isbn;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public String getAuthor() {
+		return author;
+	}
+	public double getPrice() {
+		return price;
+	}
+	public double getVIP_DISCOUNT() {
+		return VIP_DISCOUNT;
+	}
+	public double getPHYSICAL_DISCOUNT() {
+		return PHYSICAL_DISCOUNT;
+	}
+	public double getEBOOK_DISCOUNT() {
+		return EBOOK_DISCOUNT;
+	}
+	public double getAUDIO_DISCOUNT() {
+		return AUDIO_DISCOUNT;
+	}
+
+	public String type() {
+		return this.getClass().getSimpleName();
+	}
+	
+	public abstract double calculatePrice(boolean Vip);
+	
+	public String toString() {
+		return type()+": "+title+" by "+author+"("+isbn+"): "+price+" THB";
+	}
+	
+}
+
+
+package gptGen;
+
+public class PhysicalBook extends Book{
+
+	public PhysicalBook(String isbn, String title, String author, double price) {
+		super(isbn, title, author, price);
+	}
+
+	public double calculatePrice(boolean Vip) {
+		double total = getPrice()*getPHYSICAL_DISCOUNT();
+		if(Vip) total*=getVIP_DISCOUNT();
+		return total;
+	}
+
+}
+
+
+package gptGen;
+
+public class EBook extends Book{
+
+	public EBook(String isbn, String title, String author, double price) {
+		super(isbn, title, author, price);
+	}
+
+	public double calculatePrice(boolean Vip) {
+		double total = getPrice()*getEBOOK_DISCOUNT();
+		if(Vip) total*=getVIP_DISCOUNT();
+		return total;
+	}
+}
+
+
+package gptGen;
+
+public class Audiobook extends Book{
+
+	public Audiobook(String isbn, String title, String author, double price) {
+		super(isbn, title, author, price);
+	}
+
+	public double calculatePrice(boolean Vip) {
+		double total = getPrice()*getAUDIO_DISCOUNT();
+		if(Vip) total*=getVIP_DISCOUNT();
+		return total;
+	}
+}
+
+
+package gptGen;
+import java.util.*;
+public class Customer {
+	private String name;
+	private boolean Vip;
+	private List<Book> Basket = new ArrayList<>();
+	
+	public Customer (String name, boolean Vip) {
+		this.name=name;
+		this.Vip=Vip;
+	}
+	
+	public void addBasket(Book Book) {
+		Basket.add(Book);
+	}
+	
+	public double calculateTotal() {
+		double total = 0;
+		for(Book b : Basket) {
+			total += b.calculatePrice(Vip);
+		}
+		return total;
+	}
+	
+	public void showBasket() {
+		for(Book b : Basket) {
+		System.out.println(b);	
+		} 
+		System.out.println("Total: ("+(Vip ? "VIP":"NARMAL")+") "+calculateTotal()+" THB");
+	}
+	
+	public List<Book> getBasget(){
+		return Basket;
+	}
+}
+
+
+package gptGen;
+
+public class testMain {
+	public static void main(String[] args) {
+		Book book1 = new PhysicalBook("p1", "Math", "joey", 100);
+		Book book2 = new EBook("e1", "Readder", "Noey", 200);
+		Book book3 = new Audiobook("a1", "Soundder", "Siri", 300);
+		
+		Customer c1 =new Customer("Manny", false);
+		c1.addBasket(book1);
+		c1.addBasket(book1);
+		c1.addBasket(book2);
+		
+		c1.showBasket();
+	}
+}
